@@ -7,21 +7,66 @@
 #include<sys/wait.h>
 #include<sys/reg.h>
 
+#include<fcntl.h>
+#include<signal.h>
+#include<string.h>
+
 int main(int argc,char **argv)
 {
 	pid_t child_pid;
 	int p_status;
 	long syscall;
+  //
+  int fd = -1, fi = -1;
+  char fileNameI[21] = "", fileNameD[21] = "";
+  ssize_t size = -1;
+  char buf[100];
 
 	child_pid = fork();
 
 	if(child_pid == 0) // child process
 	{
-		ptrace(PTRACE_TRACEME, child_pid, NULL, NULL);
-		kill(getpid(), SIGSTOP);
-	
+	  ptrace(PTRACE_TRACEME, child_pid, NULL, NULL);
+	  kill(getpid(), SIGSTOP);
+	  
 		// Implement your file copy code
-	
+    // Open the input file
+    printf("Please input the source file name:\n");
+    scanf("%s", &fileNameI);
+    fi = open(fileNameI, O_RDONLY);
+    if(-1 == fi){
+      printf("Failed to open file %s: %d\n", fileNameI, fi);
+      return -1;
+    }else
+      printf("Success to open file %s\n", fileNameI);
+
+    // Open the dst file
+    printf("Please input the destination file name:\n");
+    scanf("%s", &fileNameD);
+    fd = open(fileNameD, O_CREAT | O_RDWR | O_TRUNC, 0777); // 0777 can R/W for all usr
+    if(-1 == fd){
+      printf("Failed to open file %s: %d\n", fileNameD, fd);
+      return -1;
+    }else
+      printf("Success to open file %s\n", fileNameI);
+    
+    // Copy file
+    while(size){
+      size = read(fi,buf,100);
+      if(-1 == size){
+        printf("Read file %s error occurs\n", fileNameD);
+        break;
+      }else{
+        if(size > 0){
+          //printf("\n//----test: %s----//\n", buf);
+          write(fd,buf,strlen(buf));
+        }else
+          printf("Reach the end of file\n");
+      }
+    }
+    // END of copy
+    close(fi); close(fd);
+    printf("%s has generated\n", fileNameD);
 		exit(0);
 	}
 	else if(child_pid > 0) // parent process
