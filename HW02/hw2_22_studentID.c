@@ -31,25 +31,32 @@ int main(int argc,char **argv)
 	  
 		// Implement your file copy code
     // Open the input file
-    printf("Please input the source file name:\n");
-    scanf("%s", &fileNameI);
-    fi = open(fileNameI, O_RDONLY);
-    if(-1 == fi){
-      printf("Failed to open file %s: %d\n", fileNameI, fi);
-      return -1;
-    }else
-      printf("Success to open file %s\n", fileNameI);
-
+    while(1){
+      printf("Please input the source file name:\n");
+      scanf("%s", &fileNameI);
+      fi = open(fileNameI, O_RDONLY);
+      if(-1 == fi){
+        printf("Failed to open file %s: %d\n", fileNameI, fi);
+        continue;;
+      }else{
+        printf("Success to open file %s\n", fileNameI);
+        break;
+      }
+    }
     // Open the dst file
-    printf("Please input the destination file name:\n");
-    scanf("%s", &fileNameD);
-    fd = open(fileNameD, O_CREAT | O_RDWR | O_TRUNC, 0777); // 0777 can R/W for all usr
-    if(-1 == fd){
-      printf("Failed to open file %s: %d\n", fileNameD, fd);
-      return -1;
-    }else
-      printf("Success to open file %s\n", fileNameI);
-    
+    while(1){
+      printf("Please input the destination file name:\n");
+      scanf("%s", &fileNameD);
+      fd = open(fileNameD, O_CREAT | O_EXCL | O_RDWR,  0777); // 0777 can R/W for all usr
+      if(-1 == fd){
+        printf("Failed to open file %s: %d\n", fileNameD, fd);
+        printf("The file is exist, please enter the new name.\n");
+        continue;
+      }else{
+        printf("Success to open file %s\n", fileNameD);
+        break;
+      }
+    }
     // Copy file
     while(size){
       size = read(fi,buf,100);
