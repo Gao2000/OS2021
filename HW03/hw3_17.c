@@ -69,7 +69,8 @@ int main(int argc, char *argv[]){
     wait(NULL);
     int fib_s[len] = {0};
     printf("%s\n", shared_memory);
-    
+    shmdt(shared_memory);
+    shmctl(segment_id, IPC_RMID, NULL);
     printf("Parent process-end,pid = %d\n", getpid());
     return 0;
   }
