@@ -66,7 +66,7 @@ int main(int argc,char **argv)
       }else{
         if(size > 0){
           //printf("\n//----test: %s----//\n", buf);
-          write(fd,buf,strlen(buf));
+          write(fd,buf,size);
         }else
           printf("Reach the end of file\n");
       }
