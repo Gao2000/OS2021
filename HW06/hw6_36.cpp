@@ -52,19 +52,15 @@ int main()
         int cus_time;
         std::getline(in, temp); cus_time = std::stoi(temp);
         time[j] = cus_time;
-        std::cout << cus_time << std::endl;
     }
 
-    for(int j = 0; j < cus_num; j++)
+    error = pthread_create(&customer_t, NULL, customer, NULL);
+    if (error != 0) {
+        printf("pthread_create is not created...\n");
+        return -1;
+    }
+    for(int j = 1; j < cus_num; j++)
     {
-        if (j == 0) {
-            error = pthread_create(&customer_t, NULL, customer, NULL);
-            if (error != 0) {
-                printf("pthread_create is not created...\n");
-                return -1;
-            }
-            continue;
-        }
         // std::cout << cus_time << std::endl;
         usleep(time[j]*1000);
         error = pthread_create(&customer_t, NULL, customer, NULL);
