@@ -5,6 +5,9 @@
 #include <semaphore.h>
 #include <sys/time.h>
 #include <math.h>
+
+#include <thread>
+#include <mutex>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -15,15 +18,11 @@ sem_t customers;
 sem_t barbers;
 pthread_mutex_t mutex;
 
-int waiting = 0;
-int CHAIRS = 0;
-int Serviced_client = 0;
+int waiting = 0, CHAIRS = 0, cus_num = 0;
+int Serviced_client = 0, Unserviced_client = 0;
 void* barber(void* arg);
 void* customer(void* num);
 void cut_hair(void);
-double flat(void);
-double normal(void);
-double bursty(void);
 
 int main()
 {
@@ -33,13 +32,18 @@ int main()
     /* input file */
     std::ifstream in;
     std::string temp;
-    int cus_num = 0;
     in.open("input.txt", std::ios::in);
     if (!in)
         std::cout << "input.txt not exist" << std::endl;
     std::getline(in, temp); CHAIRS = std::stoi(temp);
     std::getline(in, temp); cus_num = std::stoi(temp);
-    // printf("%d %d\n", cus_num, CHAIRS);
+    int time[cus_num] = {0};
+    for (int j = 0; j < cus_num - 1; j++) {
+        int cus_time;
+        std::getline(in, temp); cus_time = std::stoi(temp);
+        time[j] = cus_time;
+    }
+
     int error;
     error = pthread_create(&barber_t, NULL, barber, NULL);
     if (error != 0) {
@@ -47,27 +51,15 @@ int main()
         return -1;
     }
 
-    int time[cus_num] = {0};
-    for (int j = 1; j < cus_num; j++) {
-        int cus_time;
-        std::getline(in, temp); cus_time = std::stoi(temp);
-        time[j] = cus_time;
-    }
-
-    error = pthread_create(&customer_t, NULL, customer, NULL);
-    if (error != 0) {
-        printf("pthread_create is not created...\n");
-        return -1;
-    }
-    for(int j = 1; j < cus_num; j++)
+    for(int j = 0; j < cus_num; j++)
     {
         // std::cout << cus_time << std::endl;
-        usleep(time[j]*1000);
         error = pthread_create(&customer_t, NULL, customer, NULL);
         if (error != 0) {
             printf("pthread_create is not created...\n");
             return -1;
         }
+        usleep(time[j]*1000);
     }
     in.close();
 
@@ -76,40 +68,37 @@ int main()
 }
 void* barber(void* arg)
 {
-    while (1)
+    while ( (Serviced_client + UnServiced_client) <= cus_num)
     {
         sem_wait(&customers);
         pthread_mutex_lock(&mutex);
-        waiting = waiting - 1;
-        sem_post(&barbers);
+        waiting--;
         pthread_mutex_unlock(&mutex);
-        usleep(barber_use_time);
-        // cut_hair();
+        cut_hair();
+        sem_post(&barbers);
         std::cout << "Barber services a client, available seats: " << CHAIRS - waiting << std::endl;
         Serviced_client++;
     }
 }
 void cut_hair(void)
 {
-    // printf("  Barber:I am cutting the customer's hair...\n");
     usleep(barber_use_time);
-    // printf("  Barber:done.\n");
 }
 void* customer(void* num)
 {
-    pthread_mutex_lock(&mutex);
     if (waiting < CHAIRS)
     {
-        waiting = waiting + 1;
-        sem_post(&customers);
+        pthread_mutex_lock(&mutex);
+        waiting++;
+        std::cout << "Client takes a seat, available seats: " << CHAIRS - waiting << std::endl;
         pthread_mutex_unlock(&mutex);
+        sem_post(&customers);
         sem_wait(&barbers);
-        std::cout << "Client takes a seat, available seats: " << CHAIRS-waiting-1 << std::endl;
     }
     else
     {
         //printf("  Waiter is too much...\n");
-        pthread_mutex_unlock(&mutex);
+        Unserviced_client++;
     }
 
 }
